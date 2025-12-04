@@ -517,9 +517,9 @@ const App: React.FC = () => {
   
   const getToastColor = (type: string) => {
       switch(type) {
-          case 'social': return 'bg-acid-pink/90 text-white border-acid-pink/50';
-          case 'safety': return 'bg-acid-blue/90 text-black border-acid-blue/50';
-          default: return 'bg-white/90 text-black border-black/30';
+          case 'social': return 'bg-acid-pink/95 text-white border-acid-pink/70';
+          case 'safety': return 'bg-acid-blue/95 text-black border-acid-blue/70';
+          default: return 'bg-white/95 text-black border-black/40';
       }
   };
 
@@ -527,11 +527,11 @@ const App: React.FC = () => {
     <div className="fixed inset-0 bg-[#050505] text-white font-body overflow-hidden selection:bg-acid-lime selection:text-black">
       {/* Toast Notification (Subtle Top Center) */}
       {toast && (
-          <div key={toast.id} className="fixed top-4 left-1/2 transform -translate-x-1/2 z-[60] w-auto max-w-[85vw] pointer-events-none animate-pop">
-              <div className={`${getToastColor(toast.type)} border-2 px-4 py-2.5 shadow-lg backdrop-blur-sm flex items-center gap-2 rounded-lg`}>
-                   {toast.type === 'safety' && <ShieldCheck size={18} />}
-                   {toast.type === 'social' && <Zap size={18} />}
-                  <span className="text-sm font-display font-bold uppercase tracking-wide whitespace-normal text-center leading-tight">{toast.message}</span>
+          <div key={toast.id} className="fixed top-12 left-1/2 transform -translate-x-1/2 z-[60] w-auto max-w-[90vw] pointer-events-none animate-pop">
+              <div className={`${getToastColor(toast.type)} border-2 px-5 py-3 shadow-xl backdrop-blur-md flex items-center gap-2.5 rounded-xl`}>
+                   {toast.type === 'safety' && <ShieldCheck size={20} />}
+                   {toast.type === 'social' && <Zap size={20} />}
+                  <span className="text-base font-display font-bold uppercase tracking-wide whitespace-normal text-center leading-tight">{toast.message}</span>
               </div>
           </div>
       )}
