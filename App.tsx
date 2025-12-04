@@ -195,6 +195,14 @@ const App: React.FC = () => {
       showNotification(`🍻 CLINKED WITH ${friendName.toUpperCase()}!`, 'social');
   };
 
+  const handleSendInvite = (friendName: string) => {
+      showNotification(`📨 INVITE SENT TO ${friendName.toUpperCase()}!`, 'social');
+  };
+
+  const handleRequestToJoin = (friendName: string) => {
+      showNotification(`🚪 JOIN REQUEST SENT TO ${friendName.toUpperCase()}'S SESSION!`, 'social');
+  };
+
   const renderTabContent = () => {
     switch (activeTab) {
       case AppTab.MAP:
@@ -202,6 +210,8 @@ const App: React.FC = () => {
                   friends={friends} 
                   onCameraOpen={() => setShowCamera(true)} 
                   onSendCheers={handleCheers}
+                  onSendInvite={handleSendInvite}
+                  onRequestToJoin={handleRequestToJoin}
                   isGhostMode={isGhostMode}
                />;
       case AppTab.HISTORY:

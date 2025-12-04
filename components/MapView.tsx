@@ -1,7 +1,7 @@
 
 import React, { useState, useRef, useEffect } from 'react';
 import { MapViewProps } from '../types';
-import { Navigation, Search, Camera, ChevronDown, GlassWater, Ghost } from 'lucide-react';
+import { Navigation, Search, Camera, ChevronDown, GlassWater, Ghost, UserPlus, LogIn } from 'lucide-react';
 
 declare global {
   interface Window {
@@ -9,7 +9,7 @@ declare global {
   }
 }
 
-export const MapView: React.FC<MapViewProps> = ({ friends, onCameraOpen, onSendCheers, isGhostMode }) => {
+export const MapView: React.FC<MapViewProps> = ({ friends, onCameraOpen, onSendCheers, onSendInvite, onRequestToJoin, isGhostMode }) => {
   const mapContainerRef = useRef<HTMLDivElement>(null);
   const mapInstanceRef = useRef<any>(null);
   const userMarkerRef = useRef<any>(null);
@@ -199,15 +199,38 @@ export const MapView: React.FC<MapViewProps> = ({ friends, onCameraOpen, onSendC
       {/* FRIEND POPUP OVERLAY (Custom UI instead of Leaflet Popup) */}
       {selectedFriend && (
           <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-32 z-[500] pointer-events-auto">
-               <div className="bg-white border-4 border-black px-4 py-3 shadow-[8px_8px_0px_0px_#000] w-max animate-pop flex flex-col items-center">
-                    <span className="block text-black font-display font-black text-2xl uppercase leading-none mb-2">{selectedFriend.name}</span>
-                    <button 
-                        onClick={(e) => { e.stopPropagation(); onSendCheers(selectedFriend.name); setSelectedFriendId(null); }}
-                        className="px-6 py-2 bg-acid-pink text-white font-bold text-sm uppercase border-2 border-black hover:bg-black hover:text-white transition-colors flex items-center gap-2"
-                    >
-                        <GlassWater size={16} /> SEND CHEERS
-                    </button>
-                    <button onClick={() => setSelectedFriendId(null)} className="mt-2 text-[10px] uppercase font-bold text-gray-400 hover:text-black">Close</button>
+               <div className="bg-white border-4 border-black px-4 py-3 shadow-[8px_8px_0px_0px_#000] w-max animate-pop flex flex-col items-center min-w-[200px]">
+                    <span className="block text-black font-display font-black text-2xl uppercase leading-none mb-3">{selectedFriend.name}</span>
+                    
+                    {/* Action Buttons Grid */}
+                    <div className="flex flex-col gap-2 w-full mb-2">
+                        <button 
+                            onClick={(e) => { e.stopPropagation(); onSendCheers(selectedFriend.name); setSelectedFriendId(null); }}
+                            className="px-4 py-2 bg-acid-pink text-white font-bold text-xs uppercase border-2 border-black hover:bg-black hover:text-white transition-colors flex items-center justify-center gap-2"
+                        >
+                            <GlassWater size={14} /> SEND CHEERS
+                        </button>
+                        
+                        {onSendInvite && (
+                            <button 
+                                onClick={(e) => { e.stopPropagation(); onSendInvite(selectedFriend.name); setSelectedFriendId(null); }}
+                                className="px-4 py-2 bg-acid-lime text-black font-bold text-xs uppercase border-2 border-black hover:bg-black hover:text-acid-lime transition-colors flex items-center justify-center gap-2"
+                            >
+                                <UserPlus size={14} /> SEND INVITE
+                            </button>
+                        )}
+                        
+                        {onRequestToJoin && (
+                            <button 
+                                onClick={(e) => { e.stopPropagation(); onRequestToJoin(selectedFriend.name); setSelectedFriendId(null); }}
+                                className="px-4 py-2 bg-acid-blue text-black font-bold text-xs uppercase border-2 border-black hover:bg-black hover:text-acid-blue transition-colors flex items-center justify-center gap-2"
+                            >
+                                <LogIn size={14} /> REQUEST TO JOIN
+                            </button>
+                        )}
+                    </div>
+                    
+                    <button onClick={() => setSelectedFriendId(null)} className="mt-1 text-[10px] uppercase font-bold text-gray-400 hover:text-black">Close</button>
                 </div>
           </div>
       )}

@@ -53,6 +53,8 @@ export interface MapViewProps {
   friends: Friend[];
   onCameraOpen: () => void;
   onSendCheers: (friendName: string) => void;
+  onSendInvite?: (friendName: string) => void;
+  onRequestToJoin?: (friendName: string) => void;
   isGhostMode: boolean;
 }
 
