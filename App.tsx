@@ -517,21 +517,21 @@ const App: React.FC = () => {
   
   const getToastColor = (type: string) => {
       switch(type) {
-          case 'social': return 'bg-acid-pink/95 text-white border-acid-pink/70';
-          case 'safety': return 'bg-acid-blue/95 text-black border-acid-blue/70';
-          default: return 'bg-white/95 text-black border-black/40';
+          case 'social': return 'bg-acid-pink text-white border-white';
+          case 'safety': return 'bg-acid-blue text-black border-white';
+          default: return 'bg-white text-black border-black';
       }
   };
 
   return (
     <div className="fixed inset-0 bg-[#050505] text-white font-body overflow-hidden selection:bg-acid-lime selection:text-black">
-      {/* Toast Notification (Subtle Top Center) */}
+      {/* Toast Notification (Sticker Style) */}
       {toast && (
-          <div key={toast.id} className="fixed top-12 left-1/2 transform -translate-x-1/2 z-[60] w-auto max-w-[90vw] pointer-events-none animate-pop">
-              <div className={`${getToastColor(toast.type)} border-2 px-5 py-3 shadow-xl backdrop-blur-md flex items-center gap-2.5 rounded-xl`}>
-                   {toast.type === 'safety' && <ShieldCheck size={20} />}
-                   {toast.type === 'social' && <Zap size={20} />}
-                  <span className="text-base font-display font-bold uppercase tracking-wide whitespace-normal text-center leading-tight">{toast.message}</span>
+          <div key={toast.id} className="absolute top-24 left-1/2 transform -translate-x-1/2 z-[60] animate-pop w-auto max-w-[90vw]">
+              <div className={`${getToastColor(toast.type)} border-2 px-6 py-4 shadow-[4px_4px_0px_0px_rgba(255,255,255,0.5)] transform -rotate-2 flex items-center gap-3`}>
+                   {toast.type === 'safety' && <ShieldCheck size={24} />}
+                   {toast.type === 'social' && <Zap size={24} />}
+                  <span className="text-lg font-display font-black uppercase tracking-wider whitespace-normal text-center block leading-tight">{toast.message}</span>
               </div>
           </div>
       )}
