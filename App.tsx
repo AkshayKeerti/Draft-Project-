@@ -47,6 +47,12 @@ const App: React.FC = () => {
   // Dynamic Friends State for Live Updates
   const [friends, setFriends] = useState<Friend[]>(MOCK_FRIENDS);
   
+  // Track incoming invites/requests (sent TO me)
+  const [incomingInvites, setIncomingInvites] = useState<Record<string, 'invite' | 'join'>>({});
+  
+  // Track outgoing invites/requests (sent BY me)
+  const [outgoingInvites, setOutgoingInvites] = useState<Record<string, 'invite' | 'join'>>({});
+  
   const [toast, setToast] = useState<NotificationToast | null>(null);
   
   // Session State
@@ -83,6 +89,28 @@ const App: React.FC = () => {
     }, 8000);
     return () => clearInterval(interval);
   }, [friends]);
+
+  // SIMULATION: Randomly receive invites/requests from friends
+  useEffect(() => {
+    const interval = setInterval(() => {
+      // 10% chance every 15 seconds to receive an invite/request
+      if (Math.random() > 0.9 && friends.length > 0) {
+        const randomFriend = friends[Math.floor(Math.random() * friends.length)];
+        if (randomFriend.status === 'active' && !incomingInvites[randomFriend.id] && !outgoingInvites[randomFriend.id]) {
+          const type = Math.random() > 0.5 ? 'invite' : 'join';
+          setIncomingInvites(prev => ({ ...prev, [randomFriend.id]: type }));
+          setToast({ 
+            message: type === 'invite' 
+              ? `📨 ${randomFriend.name.toUpperCase()} SENT YOU AN INVITE!` 
+              : `🚪 ${randomFriend.name.toUpperCase()} WANTS YOU TO JOIN!`,
+            type: 'social',
+            id: Date.now()
+          });
+        }
+      }
+    }, 15000);
+    return () => clearInterval(interval);
+  }, [friends, incomingInvites, outgoingInvites]);
 
   const showNotification = (message: string, type: 'social' | 'safety' | 'default' = 'default') => {
       setToast({ message, type, id: Date.now() });
@@ -195,16 +223,50 @@ const App: React.FC = () => {
       showNotification(`🍻 CLINKED WITH ${friendName.toUpperCase()}!`, 'social');
   };
 
-  const handleSendInvite = (friendName: string) => {
+  const handleSendInvite = (friendId: string, friendName: string) => {
+      // Mark that I sent an invite to this friend
+      setOutgoingInvites(prev => ({ ...prev, [friendId]: 'invite' }));
       showNotification(`📨 INVITE SENT TO ${friendName.toUpperCase()}!`, 'social');
   };
 
-  const handleRequestToJoin = (friendName: string) => {
+  const handleRequestToJoin = (friendId: string, friendName: string) => {
+      // Mark that I sent a join request to this friend
+      setOutgoingInvites(prev => ({ ...prev, [friendId]: 'join' }));
       showNotification(`🚪 JOIN REQUEST SENT TO ${friendName.toUpperCase()}'S SESSION!`, 'social');
+      
+      // Simulate acceptance after 3-5 seconds
+      setTimeout(() => {
+          const randomDelay = 3000 + Math.random() * 2000; // 3-5 seconds
+          setTimeout(() => {
+              showNotification(`✅ ${friendName.toUpperCase()} ACCEPTED YOUR JOIN REQUEST! 🎉`, 'social');
+              // Remove from outgoing since it's been accepted
+              setOutgoingInvites(prev => {
+                  const updated = { ...prev };
+                  delete updated[friendId];
+                  return updated;
+              });
+          }, randomDelay);
+      }, 100);
   };
 
-  const handleAcceptInvite = (friendName: string) => {
-      showNotification(`✅ ACCEPTED INVITE FROM ${friendName.toUpperCase()}!`, 'social');
+  const handleAcceptInvite = (friendId: string, friendName: string, type: 'invite' | 'join') => {
+      // Remove from incoming invites
+      setIncomingInvites(prev => {
+          const updated = { ...prev };
+          delete updated[friendId];
+          return updated;
+      });
+      showNotification(`✅ ACCEPTED ${type === 'invite' ? 'INVITE' : 'JOIN REQUEST'} FROM ${friendName.toUpperCase()}!`, 'social');
+  };
+
+  const handleIgnoreInvite = (friendId: string, friendName: string) => {
+      // Remove from incoming invites
+      setIncomingInvites(prev => {
+          const updated = { ...prev };
+          delete updated[friendId];
+          return updated;
+      });
+      showNotification(`❌ IGNORED REQUEST FROM ${friendName.toUpperCase()}`, 'default');
   };
 
   const handleNavigateToFriend = (friendId: string, lat: number, lng: number) => {
@@ -226,7 +288,10 @@ const App: React.FC = () => {
                   onSendInvite={handleSendInvite}
                   onRequestToJoin={handleRequestToJoin}
                   onAcceptInvite={handleAcceptInvite}
+                  onIgnoreInvite={handleIgnoreInvite}
                   onNavigateToFriend={handleNavigateToFriend}
+                  incomingInvites={incomingInvites}
+                  outgoingInvites={outgoingInvites}
                   isGhostMode={isGhostMode}
                />;
       case AppTab.HISTORY:

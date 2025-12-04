@@ -1,7 +1,7 @@
 
 import React, { useState, useRef, useEffect } from 'react';
 import { MapViewProps } from '../types';
-import { Navigation, Search, Camera, ChevronDown, GlassWater, Ghost, UserPlus, LogIn, Check, MapPin } from 'lucide-react';
+import { Navigation, Search, Camera, ChevronDown, GlassWater, Ghost, UserPlus, LogIn, Check, MapPin, X } from 'lucide-react';
 
 declare global {
   interface Window {
@@ -9,7 +9,7 @@ declare global {
   }
 }
 
-export const MapView: React.FC<MapViewProps> = ({ friends, onCameraOpen, onSendCheers, onSendInvite, onRequestToJoin, onAcceptInvite, onNavigateToFriend, isGhostMode }) => {
+export const MapView: React.FC<MapViewProps> = ({ friends, onCameraOpen, onSendCheers, onSendInvite, onRequestToJoin, onAcceptInvite, onIgnoreInvite, onNavigateToFriend, incomingInvites = {}, outgoingInvites = {}, isGhostMode }) => {
   const mapContainerRef = useRef<HTMLDivElement>(null);
   const mapInstanceRef = useRef<any>(null);
   const userMarkerRef = useRef<any>(null);
@@ -18,7 +18,6 @@ export const MapView: React.FC<MapViewProps> = ({ friends, onCameraOpen, onSendC
   const [selectedCity, setSelectedCity] = useState('Dublin');
   const [showCityMenu, setShowCityMenu] = useState(false);
   const [selectedFriendId, setSelectedFriendId] = useState<string | null>(null);
-  const [pendingAction, setPendingAction] = useState<{ friendId: string; type: 'invite' | 'join' } | null>(null);
 
   const cities: Record<string, [number, number]> = {
       'Dublin': [53.3498, -6.2603],
@@ -127,8 +126,6 @@ export const MapView: React.FC<MapViewProps> = ({ friends, onCameraOpen, onSendC
             // Handle Click
             marker.on('click', () => {
                 setSelectedFriendId(friend.id);
-                // Clear pending action if selecting a different friend
-                setPendingAction(prev => prev?.friendId === friend.id ? prev : null);
                 // Center map on friend
                 map.flyTo([friend.lat, friend.lng], 16, { animate: true, duration: 0.8 });
             });
@@ -207,7 +204,6 @@ export const MapView: React.FC<MapViewProps> = ({ friends, onCameraOpen, onSendC
                    className="fixed inset-0 bg-black/60 z-[499] pointer-events-auto"
                    onClick={() => {
                        setSelectedFriendId(null);
-                       setPendingAction(null);
                    }}
                />
                
@@ -219,29 +215,70 @@ export const MapView: React.FC<MapViewProps> = ({ friends, onCameraOpen, onSendC
                     >
                     <span className="block text-black font-display font-black text-2xl uppercase leading-none mb-4">{selectedFriend.name}</span>
                     
-                    {/* Check if there's a pending action for this friend */}
-                    {pendingAction && pendingAction.friendId === selectedFriend.id ? (
-                        /* Pending Action View - Show Accept and Navigate */
+                    {/* Check if friend sent me an invite/request (INCOMING) */}
+                    {incomingInvites[selectedFriend.id] ? (
+                        /* INCOMING: Friend sent me an invite/request - Show Accept/Ignore */
                         <div className="flex flex-col gap-3 w-full mb-3">
                             <div className="bg-acid-lime/10 border-2 border-acid-lime px-3 py-2 mb-2">
                                 <p className="text-black font-bold text-xs uppercase text-center">
-                                    {pendingAction.type === 'invite' ? '📨 INVITE SENT' : '🚪 JOIN REQUEST SENT'}
+                                    {incomingInvites[selectedFriend.id] === 'invite' ? '📨 INVITE FROM' : '🚪 JOIN REQUEST FROM'}
                                 </p>
                             </div>
                             
-                            {onAcceptInvite && (
-                                <button 
-                                    onClick={(e) => { 
-                                        e.stopPropagation(); 
-                                        onAcceptInvite(selectedFriend.name);
-                                        setPendingAction(null);
-                                        setSelectedFriendId(null);
-                                    }}
-                                    className="px-4 py-3 bg-acid-lime text-black font-bold text-sm uppercase border-2 border-black hover:bg-black hover:text-acid-lime transition-colors flex items-center justify-center gap-2"
-                                >
-                                    <Check size={16} /> ACCEPT
-                                </button>
-                            )}
+                            <div className="flex flex-col gap-2 w-full">
+                                {onAcceptInvite && (
+                                    <button 
+                                        onClick={(e) => { 
+                                            e.stopPropagation(); 
+                                            onAcceptInvite(selectedFriend.id, selectedFriend.name, incomingInvites[selectedFriend.id]);
+                                            setSelectedFriendId(null);
+                                        }}
+                                        className="px-4 py-3 bg-acid-lime text-black font-bold text-sm uppercase border-2 border-black hover:bg-black hover:text-acid-lime transition-colors flex items-center justify-center gap-2"
+                                    >
+                                        <Check size={16} /> ACCEPT
+                                    </button>
+                                )}
+                                
+                                {onIgnoreInvite && (
+                                    <button 
+                                        onClick={(e) => { 
+                                            e.stopPropagation(); 
+                                            onIgnoreInvite(selectedFriend.id, selectedFriend.name);
+                                            setSelectedFriendId(null);
+                                        }}
+                                        className="px-4 py-3 bg-gray-300 text-black font-bold text-sm uppercase border-2 border-black hover:bg-black hover:text-white transition-colors flex items-center justify-center gap-2"
+                                    >
+                                        <X size={16} /> IGNORE
+                                    </button>
+                                )}
+                                
+                                {onNavigateToFriend && (
+                                    <button 
+                                        onClick={(e) => { 
+                                            e.stopPropagation(); 
+                                            onNavigateToFriend(selectedFriend.id, selectedFriend.lat, selectedFriend.lng);
+                                            // Center map on friend's location
+                                            if (mapInstanceRef.current) {
+                                                mapInstanceRef.current.flyTo([selectedFriend.lat, selectedFriend.lng], 17, { animate: true, duration: 1.2 });
+                                            }
+                                            setSelectedFriendId(null);
+                                        }}
+                                        className="px-4 py-2 bg-acid-blue text-black font-bold text-xs uppercase border-2 border-black hover:bg-black hover:text-acid-blue transition-colors flex items-center justify-center gap-2"
+                                    >
+                                        <MapPin size={14} /> NAVIGATE
+                                    </button>
+                                )}
+                            </div>
+                        </div>
+                    ) : outgoingInvites[selectedFriend.id] ? (
+                        /* OUTGOING: I sent an invite/request - Show status */
+                        <div className="flex flex-col gap-3 w-full mb-3">
+                            <div className="bg-acid-lime/10 border-2 border-acid-lime px-3 py-2 mb-2">
+                                <p className="text-black font-bold text-xs uppercase text-center">
+                                    {outgoingInvites[selectedFriend.id] === 'invite' ? '📨 INVITE SENT' : '🚪 REQUEST SENT'}
+                                </p>
+                            </div>
+                            <p className="text-black font-bold text-xs text-center mb-2">Waiting for response...</p>
                             
                             {onNavigateToFriend && (
                                 <button 
@@ -254,14 +291,14 @@ export const MapView: React.FC<MapViewProps> = ({ friends, onCameraOpen, onSendC
                                         }
                                         setSelectedFriendId(null);
                                     }}
-                                    className="px-4 py-3 bg-acid-blue text-black font-bold text-sm uppercase border-2 border-black hover:bg-black hover:text-acid-blue transition-colors flex items-center justify-center gap-2"
+                                    className="px-4 py-2 bg-acid-blue text-black font-bold text-xs uppercase border-2 border-black hover:bg-black hover:text-acid-blue transition-colors flex items-center justify-center gap-2"
                                 >
-                                    <MapPin size={16} /> NAVIGATE TO LOCATION
+                                    <MapPin size={14} /> NAVIGATE
                                 </button>
                             )}
                         </div>
                     ) : (
-                        /* Initial Action View - Show Send Cheers, Invite, Request to Join */
+                        /* NORMAL: No pending actions - Show action buttons */
                         <div className="flex flex-col gap-2 w-full mb-2">
                             <button 
                                 onClick={(e) => { e.stopPropagation(); onSendCheers(selectedFriend.name); setSelectedFriendId(null); }}
@@ -274,8 +311,8 @@ export const MapView: React.FC<MapViewProps> = ({ friends, onCameraOpen, onSendC
                                 <button 
                                     onClick={(e) => { 
                                         e.stopPropagation(); 
-                                        onSendInvite(selectedFriend.name);
-                                        setPendingAction({ friendId: selectedFriend.id, type: 'invite' });
+                                        onSendInvite(selectedFriend.id, selectedFriend.name);
+                                        setSelectedFriendId(null);
                                     }}
                                     className="px-4 py-2 bg-acid-lime text-black font-bold text-xs uppercase border-2 border-black hover:bg-black hover:text-acid-lime transition-colors flex items-center justify-center gap-2"
                                 >
@@ -287,8 +324,9 @@ export const MapView: React.FC<MapViewProps> = ({ friends, onCameraOpen, onSendC
                                 <button 
                                     onClick={(e) => { 
                                         e.stopPropagation(); 
-                                        onRequestToJoin(selectedFriend.name);
-                                        setPendingAction({ friendId: selectedFriend.id, type: 'join' });
+                                        onRequestToJoin(selectedFriend.id, selectedFriend.name);
+                                        // Close immediately for join request
+                                        setSelectedFriendId(null);
                                     }}
                                     className="px-4 py-2 bg-acid-blue text-black font-bold text-xs uppercase border-2 border-black hover:bg-black hover:text-acid-blue transition-colors flex items-center justify-center gap-2"
                                 >
@@ -301,7 +339,6 @@ export const MapView: React.FC<MapViewProps> = ({ friends, onCameraOpen, onSendC
                     <button 
                         onClick={() => { 
                             setSelectedFriendId(null);
-                            setPendingAction(null);
                         }} 
                         className="mt-2 text-[10px] uppercase font-bold text-gray-400 hover:text-black"
                     >

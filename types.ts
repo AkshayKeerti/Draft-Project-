@@ -53,10 +53,13 @@ export interface MapViewProps {
   friends: Friend[];
   onCameraOpen: () => void;
   onSendCheers: (friendName: string) => void;
-  onSendInvite?: (friendName: string) => void;
-  onRequestToJoin?: (friendName: string) => void;
-  onAcceptInvite?: (friendName: string) => void;
+  onSendInvite?: (friendId: string, friendName: string) => void;
+  onRequestToJoin?: (friendId: string, friendName: string) => void;
+  onAcceptInvite?: (friendId: string, friendName: string, type: 'invite' | 'join') => void;
+  onIgnoreInvite?: (friendId: string, friendName: string) => void;
   onNavigateToFriend?: (friendId: string, lat: number, lng: number) => void;
+  incomingInvites?: Record<string, 'invite' | 'join'>;
+  outgoingInvites?: Record<string, 'invite' | 'join'>;
   isGhostMode: boolean;
 }
 
