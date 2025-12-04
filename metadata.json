@@ -1,0 +1,7 @@
+{
+  "name": "Copy of Copy of Round - Social Drinking Companion",
+  "description": "A social safety and connection app for nightlife. Track drinks, find friends, and ensure everyone gets home safe.",
+  "requestFramePermissions": [
+    "geolocation"
+  ]
+}
