@@ -1,7 +1,7 @@
 
 import React, { useState, useRef, useEffect } from 'react';
 import { MapViewProps } from '../types';
-import { Navigation, Search, Camera, ChevronDown, GlassWater, Ghost, UserPlus, LogIn } from 'lucide-react';
+import { Navigation, Search, Camera, ChevronDown, GlassWater, Ghost, UserPlus, LogIn, Check, MapPin } from 'lucide-react';
 
 declare global {
   interface Window {
@@ -9,7 +9,7 @@ declare global {
   }
 }
 
-export const MapView: React.FC<MapViewProps> = ({ friends, onCameraOpen, onSendCheers, onSendInvite, onRequestToJoin, isGhostMode }) => {
+export const MapView: React.FC<MapViewProps> = ({ friends, onCameraOpen, onSendCheers, onSendInvite, onRequestToJoin, onAcceptInvite, onNavigateToFriend, isGhostMode }) => {
   const mapContainerRef = useRef<HTMLDivElement>(null);
   const mapInstanceRef = useRef<any>(null);
   const userMarkerRef = useRef<any>(null);
@@ -18,6 +18,7 @@ export const MapView: React.FC<MapViewProps> = ({ friends, onCameraOpen, onSendC
   const [selectedCity, setSelectedCity] = useState('Dublin');
   const [showCityMenu, setShowCityMenu] = useState(false);
   const [selectedFriendId, setSelectedFriendId] = useState<string | null>(null);
+  const [pendingAction, setPendingAction] = useState<{ friendId: string; type: 'invite' | 'join' } | null>(null);
 
   const cities: Record<string, [number, number]> = {
       'Dublin': [53.3498, -6.2603],
@@ -126,6 +127,8 @@ export const MapView: React.FC<MapViewProps> = ({ friends, onCameraOpen, onSendC
             // Handle Click
             marker.on('click', () => {
                 setSelectedFriendId(friend.id);
+                // Clear pending action if selecting a different friend
+                setPendingAction(prev => prev?.friendId === friend.id ? prev : null);
                 // Center map on friend
                 map.flyTo([friend.lat, friend.lng], 16, { animate: true, duration: 0.8 });
             });
@@ -196,43 +199,117 @@ export const MapView: React.FC<MapViewProps> = ({ friends, onCameraOpen, onSendC
       {/* LEAFLET MAP CONTAINER */}
       <div ref={mapContainerRef} className="w-full h-full z-0" style={{background: '#050505'}}></div>
 
-      {/* FRIEND POPUP OVERLAY (Custom UI instead of Leaflet Popup) */}
+      {/* FRIEND POPUP OVERLAY (Properly Centered) */}
       {selectedFriend && (
-          <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-32 z-[500] pointer-events-auto">
-               <div className="bg-white border-4 border-black px-4 py-3 shadow-[8px_8px_0px_0px_#000] w-max animate-pop flex flex-col items-center min-w-[200px]">
-                    <span className="block text-black font-display font-black text-2xl uppercase leading-none mb-3">{selectedFriend.name}</span>
+          <>
+               {/* Backdrop */}
+               <div 
+                   className="fixed inset-0 bg-black/60 z-[499] pointer-events-auto"
+                   onClick={() => {
+                       setSelectedFriendId(null);
+                       setPendingAction(null);
+                   }}
+               />
+               
+               {/* Popup */}
+               <div className="fixed inset-0 z-[500] pointer-events-none flex items-center justify-center">
+                    <div 
+                        className="bg-white border-4 border-black px-6 py-5 shadow-[8px_8px_0px_0px_#000] w-[280px] max-w-[90vw] animate-pop flex flex-col items-center pointer-events-auto"
+                        onClick={(e) => e.stopPropagation()}
+                    >
+                    <span className="block text-black font-display font-black text-2xl uppercase leading-none mb-4">{selectedFriend.name}</span>
                     
-                    {/* Action Buttons Grid */}
-                    <div className="flex flex-col gap-2 w-full mb-2">
-                        <button 
-                            onClick={(e) => { e.stopPropagation(); onSendCheers(selectedFriend.name); setSelectedFriendId(null); }}
-                            className="px-4 py-2 bg-acid-pink text-white font-bold text-xs uppercase border-2 border-black hover:bg-black hover:text-white transition-colors flex items-center justify-center gap-2"
-                        >
-                            <GlassWater size={14} /> SEND CHEERS
-                        </button>
-                        
-                        {onSendInvite && (
+                    {/* Check if there's a pending action for this friend */}
+                    {pendingAction && pendingAction.friendId === selectedFriend.id ? (
+                        /* Pending Action View - Show Accept and Navigate */
+                        <div className="flex flex-col gap-3 w-full mb-3">
+                            <div className="bg-acid-lime/10 border-2 border-acid-lime px-3 py-2 mb-2">
+                                <p className="text-black font-bold text-xs uppercase text-center">
+                                    {pendingAction.type === 'invite' ? '📨 INVITE SENT' : '🚪 JOIN REQUEST SENT'}
+                                </p>
+                            </div>
+                            
+                            {onAcceptInvite && (
+                                <button 
+                                    onClick={(e) => { 
+                                        e.stopPropagation(); 
+                                        onAcceptInvite(selectedFriend.name);
+                                        setPendingAction(null);
+                                        setSelectedFriendId(null);
+                                    }}
+                                    className="px-4 py-3 bg-acid-lime text-black font-bold text-sm uppercase border-2 border-black hover:bg-black hover:text-acid-lime transition-colors flex items-center justify-center gap-2"
+                                >
+                                    <Check size={16} /> ACCEPT
+                                </button>
+                            )}
+                            
+                            {onNavigateToFriend && (
+                                <button 
+                                    onClick={(e) => { 
+                                        e.stopPropagation(); 
+                                        onNavigateToFriend(selectedFriend.id, selectedFriend.lat, selectedFriend.lng);
+                                        // Center map on friend's location
+                                        if (mapInstanceRef.current) {
+                                            mapInstanceRef.current.flyTo([selectedFriend.lat, selectedFriend.lng], 17, { animate: true, duration: 1.2 });
+                                        }
+                                        setSelectedFriendId(null);
+                                    }}
+                                    className="px-4 py-3 bg-acid-blue text-black font-bold text-sm uppercase border-2 border-black hover:bg-black hover:text-acid-blue transition-colors flex items-center justify-center gap-2"
+                                >
+                                    <MapPin size={16} /> NAVIGATE TO LOCATION
+                                </button>
+                            )}
+                        </div>
+                    ) : (
+                        /* Initial Action View - Show Send Cheers, Invite, Request to Join */
+                        <div className="flex flex-col gap-2 w-full mb-2">
                             <button 
-                                onClick={(e) => { e.stopPropagation(); onSendInvite(selectedFriend.name); setSelectedFriendId(null); }}
-                                className="px-4 py-2 bg-acid-lime text-black font-bold text-xs uppercase border-2 border-black hover:bg-black hover:text-acid-lime transition-colors flex items-center justify-center gap-2"
+                                onClick={(e) => { e.stopPropagation(); onSendCheers(selectedFriend.name); setSelectedFriendId(null); }}
+                                className="px-4 py-2 bg-acid-pink text-white font-bold text-xs uppercase border-2 border-black hover:bg-black hover:text-white transition-colors flex items-center justify-center gap-2"
                             >
-                                <UserPlus size={14} /> SEND INVITE
+                                <GlassWater size={14} /> SEND CHEERS
                             </button>
-                        )}
-                        
-                        {onRequestToJoin && (
-                            <button 
-                                onClick={(e) => { e.stopPropagation(); onRequestToJoin(selectedFriend.name); setSelectedFriendId(null); }}
-                                className="px-4 py-2 bg-acid-blue text-black font-bold text-xs uppercase border-2 border-black hover:bg-black hover:text-acid-blue transition-colors flex items-center justify-center gap-2"
-                            >
-                                <LogIn size={14} /> REQUEST TO JOIN
-                            </button>
-                        )}
+                            
+                            {onSendInvite && (
+                                <button 
+                                    onClick={(e) => { 
+                                        e.stopPropagation(); 
+                                        onSendInvite(selectedFriend.name);
+                                        setPendingAction({ friendId: selectedFriend.id, type: 'invite' });
+                                    }}
+                                    className="px-4 py-2 bg-acid-lime text-black font-bold text-xs uppercase border-2 border-black hover:bg-black hover:text-acid-lime transition-colors flex items-center justify-center gap-2"
+                                >
+                                    <UserPlus size={14} /> SEND INVITE
+                                </button>
+                            )}
+                            
+                            {onRequestToJoin && (
+                                <button 
+                                    onClick={(e) => { 
+                                        e.stopPropagation(); 
+                                        onRequestToJoin(selectedFriend.name);
+                                        setPendingAction({ friendId: selectedFriend.id, type: 'join' });
+                                    }}
+                                    className="px-4 py-2 bg-acid-blue text-black font-bold text-xs uppercase border-2 border-black hover:bg-black hover:text-acid-blue transition-colors flex items-center justify-center gap-2"
+                                >
+                                    <LogIn size={14} /> REQUEST TO JOIN
+                                </button>
+                            )}
+                        </div>
+                    )}
+                    
+                    <button 
+                        onClick={() => { 
+                            setSelectedFriendId(null);
+                            setPendingAction(null);
+                        }} 
+                        className="mt-2 text-[10px] uppercase font-bold text-gray-400 hover:text-black"
+                    >
+                        Close
+                    </button>
                     </div>
-                    
-                    <button onClick={() => setSelectedFriendId(null)} className="mt-1 text-[10px] uppercase font-bold text-gray-400 hover:text-black">Close</button>
-                </div>
-          </div>
+               </div>
+          </>
       )}
 
       {/* Map Controls */}

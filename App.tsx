@@ -203,6 +203,19 @@ const App: React.FC = () => {
       showNotification(`🚪 JOIN REQUEST SENT TO ${friendName.toUpperCase()}'S SESSION!`, 'social');
   };
 
+  const handleAcceptInvite = (friendName: string) => {
+      showNotification(`✅ ACCEPTED INVITE FROM ${friendName.toUpperCase()}!`, 'social');
+  };
+
+  const handleNavigateToFriend = (friendId: string, lat: number, lng: number) => {
+      const friend = friends.find(f => f.id === friendId);
+      if (friend) {
+          showNotification(`🗺️ NAVIGATING TO ${friend.name.toUpperCase()}'S LOCATION...`, 'default');
+          // In a real app, this would open maps app or navigation
+          // For now, we'll just show a notification
+      }
+  };
+
   const renderTabContent = () => {
     switch (activeTab) {
       case AppTab.MAP:
@@ -212,6 +225,8 @@ const App: React.FC = () => {
                   onSendCheers={handleCheers}
                   onSendInvite={handleSendInvite}
                   onRequestToJoin={handleRequestToJoin}
+                  onAcceptInvite={handleAcceptInvite}
+                  onNavigateToFriend={handleNavigateToFriend}
                   isGhostMode={isGhostMode}
                />;
       case AppTab.HISTORY:

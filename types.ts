@@ -55,6 +55,8 @@ export interface MapViewProps {
   onSendCheers: (friendName: string) => void;
   onSendInvite?: (friendName: string) => void;
   onRequestToJoin?: (friendName: string) => void;
+  onAcceptInvite?: (friendName: string) => void;
+  onNavigateToFriend?: (friendId: string, lat: number, lng: number) => void;
   isGhostMode: boolean;
 }
 
